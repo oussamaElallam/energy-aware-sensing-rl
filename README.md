@@ -1,0 +1,98 @@
+# Energy-Aware Sensing: RL Framework for TinyML
+
+A general reinforcement learning framework for energy-aware multi-sensor systems, with applications to wearable health monitoring and other battery-constrained sensing scenarios.
+
+## Overview
+
+This framework provides reusable components for developing RL-based energy management policies in resource-constrained sensing applications. The system balances detection accuracy with power consumption using Q-learning with configurable risk-aware rewards.
+
+## Directory Structure
+
+```
+├── framework/                         # Reusable RL + TinyML components
+│   ├── rl_env.py                     # Base environment classes
+│   ├── prepare_tiny_dataset.py       # Dataset preparation utilities
+│   └── convert_to_c_array.py         # Model conversion tools
+├── scripts/                          # Training and evaluation scripts
+│   ├── train_q_learning.py          # Q-learning with risk-aware rewards
+│   ├── lambda_sweep.py               # Parameter sweep utility
+│   ├── synthetic_evaluation.py       # Long-duration evaluation
+│   └── *.py                         # Model training scripts
+├── case_studies/
+│   └── health_wearable/              # Wearable health monitoring example
+│       ├── firmware/                 # ESP32-S3 Arduino implementation
+│       └── hardware_setup.md         # Hardware wiring guide
+├── results/                          # Training results and logs
+└── tests/                           # Unit tests
+```
+
+## Requirements
+
+### Framework
+- Python 3.7+
+- NumPy
+- scikit-learn (for dataset utilities)
+
+### Health Wearable Case Study
+- Arduino IDE
+- ESP32-S3 board support
+- TensorFlow Lite for Microcontrollers
+- Hardware sensors (see `case_studies/health_wearable/hardware_setup.md`)
+
+## Quick Start
+
+### 1. Framework Usage
+
+Train a basic Q-learning policy:
+```bash
+python scripts/train_q_learning.py --episodes 1000
+```
+
+Train with risk-aware rewards:
+```bash
+python scripts/train_q_learning.py --lambda_risk 1.0 --episodes 1000
+```
+
+Run parameter sweep:
+```bash
+python scripts/lambda_sweep.py --lambda_values 0 0.5 1.0 3.0
+```
+
+### 2. Health Wearable Case Study
+
+1. Install Arduino IDE and ESP32-S3 board support
+2. Install TensorFlow Lite for Microcontrollers library
+3. Connect hardware per `case_studies/health_wearable/hardware_setup.md`
+4. Upload `case_studies/health_wearable/firmware/main.ino`
+
+## Framework Features
+
+### Risk-Aware Rewards
+The framework supports risk-aware reward functions that penalize missed critical events:
+```
+reward = α·detection_success - β·energy_cost - λ·missed_events
+```
+
+### Configurable Environments
+- `EnergyAwareSensingEnv`: Base class for multi-sensor RL environments
+- `HealthWearableEnv`: Specialized for wearable health monitoring
+- Extensible to other sensing applications
+
+### Training & Evaluation
+- Q-learning with ε-greedy exploration
+- Parameter sweeps for hyperparameter tuning
+- Long-duration synthetic evaluations
+- Model conversion utilities for embedded deployment
+
+## Case Studies
+
+### Health Wearable
+Demonstrates energy-aware sensing for wearable health monitoring:
+- **Sensors**: ECG, PPG, Temperature
+- **Events**: Arrhythmia, blood pressure anomalies, fever
+- **Platform**: ESP32-S3 with TinyML models
+- **Results**: 16-hour evaluation showing power/accuracy trade-offs
+
+## License
+
+MIT

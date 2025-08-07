@@ -1,0 +1,7 @@
+# Arduino Libraries
+TensorFlowLite_ESP32@2.5.0
+ArduinoJson@6.19.4
+
+# Python Dependencies (for model conversion)
+tensorflow==2.5.0
+numpy>=1.19.2
