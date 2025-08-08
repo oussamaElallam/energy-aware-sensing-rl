@@ -9,9 +9,14 @@ import csv
 import os
 from pathlib import Path
 import numpy as np
+import time
 
-def run_lambda_sweep(lambda_values=[0, 1, 3], episodes=1000, output_dir="results"):
-    """Run Q-learning training with different lambda_risk values."""
+def run_lambda_sweep(lambda_values=[0, 1, 3], episodes=1000, output_dir="results", results_file=None):
+    """Run Q-learning training with different lambda_risk values.
+
+    If results_file is provided, write the CSV to that exact path; otherwise,
+    write to <output_dir>/lambda_sweep.csv.
+    """
     
     # Create results directory
     Path(output_dir).mkdir(exist_ok=True)
@@ -79,16 +84,28 @@ def run_lambda_sweep(lambda_values=[0, 1, 3], episodes=1000, output_dir="results
             })
     
     # Save results to CSV
-    results_file = Path(output_dir) / "lambda_sweep.csv"
-    with open(results_file, 'w', newline='') as f:
-        fieldnames = ['lambda_risk', 'avg_reward', 'sensor_on_percentage', 'qtable_file', 'status']
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for result in results:
-            # Only write main fields to CSV
-            writer.writerow({k: result[k] for k in fieldnames if k in result})
+    if results_file:
+        results_path = Path(results_file)
+        results_path.parent.mkdir(exist_ok=True)
+    else:
+        results_path = Path(output_dir) / "lambda_sweep.csv"
+    fieldnames = ['lambda_risk', 'avg_reward', 'sensor_on_percentage', 'qtable_file', 'status']
+    try:
+        with open(results_path, 'w', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for result in results:
+                writer.writerow({k: result[k] for k in fieldnames if k in result})
+    except PermissionError:
+        alt_path = results_path.with_name(f"{results_path.stem}_{int(time.time())}{results_path.suffix}")
+        with open(alt_path, 'w', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for result in results:
+                writer.writerow({k: result[k] for k in fieldnames if k in result})
+        results_path = alt_path
     
-    print(f"\n=== Results saved to {results_file} ===")
+    print(f"\n=== Results saved to {results_path} ===")
     
     # Print summary
     print("\nSummary:")
@@ -108,11 +125,14 @@ if __name__ == "__main__":
                        help='Episodes per training run (default: 1000)')
     parser.add_argument('--output_dir', type=str, default='results',
                        help='Output directory (default: results)')
+    parser.add_argument('--out', type=str, default=None,
+                        help='Optional path to write the results CSV (e.g., results/lambda_sweep.csv)')
     
     args = parser.parse_args()
     
     run_lambda_sweep(
         lambda_values=args.lambda_values,
         episodes=args.episodes,
-        output_dir=args.output_dir
+        output_dir=args.output_dir,
+        results_file=args.out,
     )

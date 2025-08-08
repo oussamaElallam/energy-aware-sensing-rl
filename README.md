@@ -2,6 +2,15 @@
 
 A general reinforcement learning framework for energy-aware multi-sensor systems, with applications to wearable health monitoring and other battery-constrained sensing scenarios.
 
+## Repro steps
+
+- Python 3.8+
+- Install deps: `pip install -r requirements.txt`
+- Train (example): `python scripts/train_q_learning.py --episodes 500`
+- Evaluate (example): `python scripts/lambda_sweep.py --lambda_values 0 1 3`
+
+Reproduce paper table/figure: A ready-to-open sweep CSV is committed at `results/lambda_sweep.csv`.
+
 ## Overview
 
 This framework provides reusable components for developing RL-based energy management policies in resource-constrained sensing applications. The system balances detection accuracy with power consumption using Q-learning with configurable risk-aware rewards.
@@ -57,6 +66,8 @@ Run parameter sweep:
 ```bash
 python scripts/lambda_sweep.py --lambda_values 0 0.5 1.0 3.0
 ```
+
+Sweep results are saved to `results/lambda_sweep.csv` (also committed once for reviewers).
 
 ### 2. Health Wearable Case Study
 

@@ -216,10 +216,10 @@ if __name__ == "__main__":
     print(f"Lambda_risk: {args.lambda_risk}")
     print(f"Avg reward (last 50 eps): {np.mean(R[-50:]):.2f}")
 
-    # ────────── PROBE: how many state–actions prefer at least one sensor ON
+    # ────────── PROBE: how many state-actions prefer at least one sensor ON
     on_pref  = sum(1 for (s, a), v in Q.items() if v > 0 and a != 0)
     total_sa = len(Q)
-    print(f"{on_pref/total_sa*100:.1f}% of state–actions favour ≥1 sensor ON")
+    print(f"{on_pref/total_sa*100:.1f}% of state-actions favour >=1 sensor ON")
 
     # ────────── save Q-table
     save_q_table_csv(Q, args.output)
