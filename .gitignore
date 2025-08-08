@@ -28,6 +28,7 @@ wheels/
 
 # Results and logs
 results/
+!results/lambda_sweep.csv
 logs/
 *.log
 

@@ -2,6 +2,15 @@
 
 A general reinforcement learning framework for energy-aware multi-sensor systems, with applications to wearable health monitoring and other battery-constrained sensing scenarios.
 
+## Repro steps
+
+- Python 3.8+
+- Install deps: `pip install -r requirements.txt`
+- Train (example): `python scripts/train_q_learning.py --episodes 500`
+- Evaluate (example): `python scripts/lambda_sweep.py --lambda_values 0 1 3`
+
+Reproduce paper table/figure: A ready-to-open sweep CSV is committed at `results/lambda_sweep.csv`.
+
 ## Overview
 
 This framework provides reusable components for developing RL-based energy management policies in resource-constrained sensing applications. The system balances detection accuracy with power consumption using Q-learning with configurable risk-aware rewards.
@@ -58,12 +67,35 @@ Run parameter sweep:
 python scripts/lambda_sweep.py --lambda_values 0 0.5 1.0 3.0
 ```
 
+Sweep results are saved to `results/lambda_sweep.csv` (also committed once for reviewers).
+
 ### 2. Health Wearable Case Study
 
 1. Install Arduino IDE and ESP32-S3 board support
 2. Install TensorFlow Lite for Microcontrollers library
 3. Connect hardware per `case_studies/health_wearable/hardware_setup.md`
-4. Upload `case_studies/health_wearable/firmware/main.ino`
+4. Configure risk penalty in firmware by modifying `LAMBDA_RISK` (default 0.0)
+5. Upload `case_studies/health_wearable/firmware/firmware/main.ino`
+
+### 3. Testing
+
+Run the test suite:
+```bash
+pytest tests/
+```
+
+Run specific reward tests:
+```bash
+pytest tests/test_reward.py -v
+```
+
+### 4. Hardware-in-the-Loop Evaluation
+
+Generate example sensor traces and run HIL replay:
+```bash
+python scripts/hil_replay_stub.py --create_example
+python scripts/hil_replay_stub.py --csv_file example_traces.csv --output hil_results.json
+```
 
 ## Framework Features
 
