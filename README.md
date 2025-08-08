@@ -63,7 +63,28 @@ python scripts/lambda_sweep.py --lambda_values 0 0.5 1.0 3.0
 1. Install Arduino IDE and ESP32-S3 board support
 2. Install TensorFlow Lite for Microcontrollers library
 3. Connect hardware per `case_studies/health_wearable/hardware_setup.md`
-4. Upload `case_studies/health_wearable/firmware/main.ino`
+4. Configure risk penalty in firmware by modifying `LAMBDA_RISK` (default 0.0)
+5. Upload `case_studies/health_wearable/firmware/firmware/main.ino`
+
+### 3. Testing
+
+Run the test suite:
+```bash
+pytest tests/
+```
+
+Run specific reward tests:
+```bash
+pytest tests/test_reward.py -v
+```
+
+### 4. Hardware-in-the-Loop Evaluation
+
+Generate example sensor traces and run HIL replay:
+```bash
+python scripts/hil_replay_stub.py --create_example
+python scripts/hil_replay_stub.py --csv_file example_traces.csv --output hil_results.json
+```
 
 ## Framework Features
 
