@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+authors:
+  - family-names: "El Allam"
+    given-names: "Oussama"
+    orcid: "https://orcid.org/0000-0000-0000-0000"
+title: "Energy-Aware Sensing RL Framework"
+version: "1.0-paper"
+date-released: 2025-01-08
+url: "https://github.com/oussamaElallam/energy-aware-sensing-rl"
+repository-code: "https://github.com/oussamaElallam/energy-aware-sensing-rl"
+abstract: "A reinforcement learning framework for energy-aware sensing in wearable health monitoring devices. Implements risk-aware reward mechanisms and adaptive sensor management for TinyML applications on ESP32-S3 microcontrollers."
+keywords:
+  - "reinforcement learning"
+  - "energy-aware sensing"
+  - "wearable computing"
+  - "TinyML"
+  - "health monitoring"
+  - "ESP32"
+license: MIT

@@ -11,6 +11,9 @@
 #include "tensorflow/lite/schema/schema_generated.h"
 #include "qtable_sensors_time.h" // Q-table for the RL agent
 
+// Configuration flags
+#define LAMBDA_RISK 0.0  // Risk penalty weight (default 0.0)
+
 // Constants for PPG signal
 #define PPG_SIGNAL_SIZE 128
 #define PPG_SAMPLING_FREQ 100  // Hz
@@ -121,9 +124,13 @@ bool ppg_enabled = true;        // PPG sensor state
 bool temp_enabled = true;       // Temperature sensor state
 
 // Battery simulation
-const unsigned long BATTERY_UPDATE_INTERVAL = 5000;  // 1 minute
+const unsigned long BATTERY_UPDATE_INTERVAL = 5000;  // 5 seconds
 unsigned long last_battery_update = 0;
 const float BATTERY_DRAIN_RATE = 0.1;                // Base drain rate per update
+
+// Reward calculation constants (consistent with Python training)
+const float ALPHA = 15.0;  // Success reward weight
+const float BETA = 0.008;  // Energy cost weight
 
 // Thresholds for R-peak detection
 const float PEAK_THRESHOLD = 0.7;  // Normalized threshold
@@ -509,6 +516,46 @@ void applySensorAction(int action) {
     Serial.print(ecg_enabled ? "ECG:ON " : "ECG:OFF ");
     Serial.print(ppg_enabled ? "PPG:ON " : "PPG:OFF ");
     Serial.println(temp_enabled ? "TEMP:ON" : "TEMP:OFF");
+}
+
+// Function to calculate reward (consistent with Python training)
+float calculateReward(int action) {
+    // Decode action (3-bit bitmap for 3 sensors)
+    bool ecg_on = (action & 0x04) > 0;  // Bit 2: ECG
+    bool ppg_on = (action & 0x02) > 0;  // Bit 1: PPG
+    bool temp_on = (action & 0x01) > 0; // Bit 0: Temperature
+    
+    // Calculate energy cost
+    float energy_cost = 0.0;
+    if (ecg_on) energy_cost += 50.0;   // ECG sensor cost
+    if (ppg_on) energy_cost += 40.0;   // PPG sensor cost
+    if (temp_on) energy_cost += 10.0;  // Temperature sensor cost
+    
+    // Calculate detection success
+    float detection_success = 0.0;
+    if (arr_flag && ecg_on) detection_success += 1.0;
+    if (bp_flag && ppg_on) detection_success += 1.0;
+    if (fever_flag && temp_on) detection_success += 1.0;
+    
+    // Calculate missed events (risk component)
+    float missed_events = 0.0;
+    if (arr_flag && !ecg_on) missed_events += 1.0;
+    if (bp_flag && !ppg_on) missed_events += 1.0;
+    if (fever_flag && !temp_on) missed_events += 1.0;
+    
+    // Calculate reward: reward = alpha * success - beta * cost - lambda_risk * missed_events
+    float reward = ALPHA * detection_success - BETA * energy_cost - LAMBDA_RISK * missed_events;
+    
+    Serial.print("Reward calculation - Success: ");
+    Serial.print(detection_success);
+    Serial.print(", Cost: ");
+    Serial.print(energy_cost);
+    Serial.print(", Missed: ");
+    Serial.print(missed_events);
+    Serial.print(", Reward: ");
+    Serial.println(reward);
+    
+    return reward;
 }
 
 // Function to update the battery level (simulation)
