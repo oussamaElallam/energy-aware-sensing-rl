@@ -1,0 +1,114 @@
+{
+  "config": {
+    "lambda_values": [
+      0.0,
+      0.5,
+      1.0,
+      1.5,
+      2.0
+    ],
+    "seeds": 10,
+    "episodes": 200,
+    "train_steps": 1000,
+    "eval_steps": 12000,
+    "alpha": 12.0,
+    "beta": 0.008,
+    "sensor_costs": [
+      10,
+      4,
+      1
+    ]
+  },
+  "aggregates": {
+    "0.0": {
+      "mean_detection": 50.06476248223937,
+      "std_detection": 2.001250837455793,
+      "mean_mAh": 113.74749999999999,
+      "std_mAh": 5.683884510098942
+    },
+    "0.5": {
+      "mean_detection": 49.613498474105484,
+      "std_detection": 1.7307534549752748,
+      "mean_mAh": 113.1098611111111,
+      "std_mAh": 5.106089624752132
+    },
+    "1.0": {
+      "mean_detection": 49.522057032758525,
+      "std_detection": 1.6337495111318718,
+      "mean_mAh": 113.28916666666666,
+      "std_mAh": 5.401232236331068
+    },
+    "1.5": {
+      "mean_detection": 49.58846210131243,
+      "std_detection": 1.8150206869166046,
+      "mean_mAh": 113.07444444444442,
+      "std_mAh": 5.636865826353087
+    },
+    "2.0": {
+      "mean_detection": 49.626617633188445,
+      "std_detection": 1.7374923000028981,
+      "mean_mAh": 113.21333333333332,
+      "std_mAh": 5.639398246775438
+    }
+  },
+  "table5": [
+    {
+      "Lambda": 0.0,
+      "Detection(%)": 50.06476248223937,
+      "Energy(mAh)": 113.74749999999999,
+      "Savings(%)": 54.501
+    },
+    {
+      "Lambda": 0.5,
+      "Detection(%)": 49.613498474105484,
+      "Energy(mAh)": 113.1098611111111,
+      "Savings(%)": 54.75605555555556
+    },
+    {
+      "Lambda": 1.0,
+      "Detection(%)": 49.522057032758525,
+      "Energy(mAh)": 113.28916666666666,
+      "Savings(%)": 54.684333333333335
+    },
+    {
+      "Lambda": 1.5,
+      "Detection(%)": 49.58846210131243,
+      "Energy(mAh)": 113.07444444444442,
+      "Savings(%)": 54.77022222222223
+    },
+    {
+      "Lambda": 2.0,
+      "Detection(%)": 49.626617633188445,
+      "Energy(mAh)": 113.21333333333332,
+      "Savings(%)": 54.714666666666666
+    }
+  ],
+  "stats": {
+    "wilcoxon": {
+      "RL_vs_AlwaysOn": {
+        "detection_p": 0.001953125,
+        "energy_p": 0.001953125
+      },
+      "RL_vs_Periodic": {
+        "detection_p": 0.001953125,
+        "energy_p": 0.001953125
+      }
+    }
+  },
+  "ci_95_RL_lambda0": {
+    "detection": {
+      "low": 48.63315387505042,
+      "high": 51.496371089428315
+    },
+    "energy": {
+      "low": 109.68149396286056,
+      "high": 117.81350603713942
+    }
+  },
+  "battery_life": {
+    "capacity_mAh": 500.0,
+    "always_hours": 32.0,
+    "rl_lambda0_hours": 70.33121607068288,
+    "improvement_x": 2.19785050220884
+  }
+}

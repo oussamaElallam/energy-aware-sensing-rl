@@ -1,0 +1,24 @@
+[
+  {
+    "lambda": 0.0,
+    "detections": 831,
+    "events": 975,
+    "missed": 144,
+    "energy_mAh": 19.698611111111113,
+    "reward_total": 9858.536000000073,
+    "detect_term_total": 9972.0,
+    "energy_term_total": 113.464,
+    "missed_term_total": 0.0
+  },
+  {
+    "lambda": 2.0,
+    "detections": 837,
+    "events": 975,
+    "missed": 138,
+    "energy_mAh": 19.995833333333334,
+    "reward_total": 9652.82400000003,
+    "detect_term_total": 10044.0,
+    "energy_term_total": 115.176,
+    "missed_term_total": 276.0
+  }
+]

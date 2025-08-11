@@ -1,0 +1,77 @@
+{
+  "config": {
+    "lambda_values": [
+      0.0,
+      0.5,
+      1.0
+    ],
+    "seeds": 2,
+    "episodes": 20,
+    "train_steps": 500,
+    "eval_steps": 2000,
+    "alpha": 12.0,
+    "beta": 0.008,
+    "sensor_costs": [
+      10,
+      4,
+      1
+    ]
+  },
+  "aggregates": {
+    "0.0": {
+      "mean_detection": 48.91783375846886,
+      "std_detection": 0.08142486980551365,
+      "mean_mAh": 18.292361111111113,
+      "std_mAh": 1.2953803394236876
+    },
+    "0.5": {
+      "mean_detection": 48.91783375846886,
+      "std_detection": 0.08142486980551365,
+      "mean_mAh": 18.300694444444446,
+      "std_mAh": 1.307165452443465
+    },
+    "1.0": {
+      "mean_detection": 48.149391135518044,
+      "std_detection": 1.0053171094770883,
+      "mean_mAh": 17.96527777777778,
+      "std_mAh": 0.832814653397489
+    }
+  },
+  "table5": [
+    {
+      "Lambda": 0.0,
+      "Detection(%)": 48.91783375846886,
+      "Energy(mAh)": 18.292361111111113,
+      "Savings(%)": 56.09833333333333
+    },
+    {
+      "Lambda": 0.5,
+      "Detection(%)": 48.91783375846886,
+      "Energy(mAh)": 18.300694444444446,
+      "Savings(%)": 56.07833333333333
+    },
+    {
+      "Lambda": 1.0,
+      "Detection(%)": 48.149391135518044,
+      "Energy(mAh)": 17.96527777777778,
+      "Savings(%)": 56.88333333333333
+    }
+  ],
+  "stats": {},
+  "ci_95_RL_lambda0": {
+    "detection": {
+      "low": NaN,
+      "high": NaN
+    },
+    "energy": {
+      "low": NaN,
+      "high": NaN
+    }
+  },
+  "battery_life": {
+    "capacity_mAh": 500.0,
+    "always_hours": 192.0,
+    "rl_lambda0_hours": 437.34102729585055,
+    "improvement_x": 2.2778178504992215
+  }
+}

@@ -4,7 +4,7 @@ A general reinforcement learning framework for energy-aware multi-sensor systems
 
 ## Repro steps
 
-- Python 3.8+
+- Python 3.7+
 - Install deps: `pip install -r requirements.txt`
 - Train (example): `python scripts/train_q_learning.py --episodes 500`
 - Evaluate (example): `python scripts/lambda_sweep.py --lambda_values 0 1 3`
@@ -128,3 +128,14 @@ Demonstrates energy-aware sensing for wearable health monitoring:
 ## License
 
 MIT
+
+## Paper Results
+
+All results reported in our paper are in `paper_results/`:
+- `paper_results_lambdaA.json`: Lambda robustness analysis (λ=[0,20,50,100,200])
+- `paper_tables.txt`: Formatted tables and statistics for the paper
+
+Key findings:
+- 55% energy reduction with 50% detection coverage
+- Policy robust across λ∈[0,200]
+- Statistical significance: p<0.002 vs baselines
