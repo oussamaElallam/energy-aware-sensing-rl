@@ -1,16 +1,21 @@
 import random
 import csv
 import argparse
+import sys
 from pathlib import Path
 from typing import Dict, Tuple, List
 
 import numpy as np
 
+# Import HealthWearableEnv from framework instead of duplicating code
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from framework import HealthWearableEnv
+
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Environment
+# Legacy Environment (DEPRECATED - use HealthWearableEnv from framework instead)
 # ─────────────────────────────────────────────────────────────────────────────
-class ThreeSensorTimeEnv:
+class ThreeSensorTimeEnv_DEPRECATED:
     """
     Three-sensor RL environment (ECG, PPG, Temp).
 
@@ -125,7 +130,7 @@ QTable = Dict[Tuple[State, int], float]
 
 
 def q_learning_train(
-    env: ThreeSensorTimeEnv,
+    env: HealthWearableEnv,
     episodes: int = 5_000,
     gamma: float = 0.95,
     alpha_lr: float = 0.1,
@@ -202,8 +207,9 @@ if __name__ == "__main__":
         for _ in range(STEPS)
     ]
 
-    env = ThreeSensorTimeEnv(
-        scenario,
+    # Use HealthWearableEnv from framework for consistency
+    env = HealthWearableEnv(
+        data=scenario,
         sensor_costs=[10, 4, 1],
         alpha=15.0,
         beta=0.008,
