@@ -136,6 +136,6 @@ All results reported in our paper are in `paper_results/`:
 - `paper_tables.txt`: Formatted tables and statistics for the paper
 
 Key findings:
-- 55% energy reduction with 50% detection coverage
+- 55% energy reduction (250→114 mAh) with 50.1% detection coverage
 - Policy robust across λ∈[0,200]
 - Statistical significance: p<0.002 vs baselines
