@@ -192,6 +192,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train Q-learning agent for energy-aware sensing')
     parser.add_argument('--lambda_risk', type=float, default=0.0, 
                        help='Risk penalty weight for missed events (default: 0.0)')
+    parser.add_argument('--beta', type=float, default=0.008,
+                       help='Energy penalty weight (default: 0.008)')
     parser.add_argument('--episodes', type=int, default=3000,
                        help='Number of training episodes (default: 3000)')
     parser.add_argument('--output', type=str, default='q_table_fixed',
@@ -225,7 +227,7 @@ if __name__ == "__main__":
     # Use HealthWearableEnv from framework for consistency
     # We'll rotate through scenarios each episode
     print(f"\nTraining Q-learning agent with FIXED persistence logic...")
-    print(f"Episodes: {args.episodes}, Lambda_risk: {args.lambda_risk}")
+    print(f"Episodes: {args.episodes}, Beta: {args.beta}, Lambda_risk: {args.lambda_risk}")
     print(f"Training on {args.n_seeds} different traces for generalization")
     
     Q: QTable = {}
@@ -244,7 +246,7 @@ if __name__ == "__main__":
             data=scenario,
             sensor_costs=[10, 4, 1],
             alpha=15.0,
-            beta=0.008,
+            beta=args.beta,
             lambda_risk=args.lambda_risk,
             max_battery=400_000,
             max_time_steps=STEPS_PER_SEED,
