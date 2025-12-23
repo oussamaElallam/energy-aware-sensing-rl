@@ -2,140 +2,139 @@
 
 A general reinforcement learning framework for energy-aware multi-sensor systems, with applications to wearable health monitoring and other battery-constrained sensing scenarios.
 
-## Repro steps
+## 🔧 Paper Revision Updates
 
-- Python 3.7+
-- Install deps: `pip install -r requirements.txt`
-- Train (example): `python scripts/train_q_learning.py --episodes 500`
-- Evaluate (example): `python scripts/lambda_sweep.py --lambda_values 0 1 3`
+### Critical Fix: Oracle Bug
+Fixed a methodological flaw where the agent could see ground-truth event flags even when sensors were OFF.
 
-Reproduce paper table/figure: A ready-to-open sweep CSV is committed at `results/lambda_sweep.csv`.
+**Solution**: Implemented **persistence logic** - event flags only update when the corresponding sensor is ON. Otherwise, flags persist (stale values).
 
-## Overview
+### Pareto Frontier: Detection vs Energy Trade-off
 
-This framework provides reusable components for developing RL-based energy management policies in resource-constrained sensing applications. The system balances detection accuracy with power consumption using Q-learning with configurable risk-aware rewards.
+| Config | β | Detection | Energy Savings |
+|--------|---|-----------|----------------|
+| Safety-First | 0.05 | **83%** | 19% |
+| Balanced | 0.5 | **67%** | 68% |
+| Energy-Saver | 1.0 | **33%** | 87% |
+
+The β parameter controls the energy penalty weight, enabling tunable trade-offs.
+
+---
+
+## Quick Start
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Train with different energy penalties (β values)
+python scripts/train_q_learning.py --episodes 5000 --beta 0.05 --n_seeds 10 --output q_table_beta_0.05
+
+# Evaluate Pareto frontier
+python scripts/pareto_eval.py
+
+# Run all tests
+pytest tests/
+```
 
 ## Directory Structure
 
 ```
-├── framework/                         # Reusable RL + TinyML components
-│   ├── rl_env.py                     # Base environment classes
-│   ├── prepare_tiny_dataset.py       # Dataset preparation utilities
-│   └── convert_to_c_array.py         # Model conversion tools
-├── scripts/                          # Training and evaluation scripts
-│   ├── train_q_learning.py          # Q-learning with risk-aware rewards
-│   ├── lambda_sweep.py               # Parameter sweep utility
-│   ├── synthetic_evaluation.py       # Long-duration evaluation
-│   └── *.py                         # Model training scripts
-├── case_studies/
-│   └── health_wearable/              # Wearable health monitoring example
-│       ├── firmware/                 # ESP32-S3 Arduino implementation
-│       └── hardware_setup.md         # Hardware wiring guide
-├── results/                          # Training results and logs
-└── tests/                           # Unit tests
+├── framework/                         # Core RL environment
+│   └── rl_env.py                     # Fixed persistence logic
+├── scripts/
+│   ├── train_q_learning.py          # Multi-seed Q-learning with --beta arg
+│   ├── pareto_eval.py               # Pareto frontier evaluation
+│   ├── evaluate_mitbih.py           # MIT-BIH real data evaluation
+│   └── baselines.py                 # Heuristic baseline policies
+├── tests/
+│   ├── test_persistence.py          # Persistence logic tests (9 tests)
+│   ├── test_rl_env.py               # Environment tests
+│   └── test_reward.py               # Reward function tests
+├── reproduce_results.ipynb           # Colab notebook with Pareto plot
+├── pareto_results.csv                # Summary table
+├── q_table_beta_*.pkl               # Trained Q-tables
+└── mitbih_*.csv                      # MIT-BIH evaluation results
 ```
+
+## Reproducibility
+
+### Google Colab
+Open `reproduce_results.ipynb` to reproduce all results including the Pareto frontier plot.
+
+### MIT-BIH Evaluation
+```bash
+python scripts/evaluate_mitbih.py --qtable q_table_beta_0.05.pkl
+```
+
+Downloads 48 real ECG records from PhysioNet and evaluates detection performance.
 
 ## Requirements
 
-### Framework
 - Python 3.7+
 - NumPy
-- scikit-learn (for dataset utilities)
-
-### Health Wearable Case Study
-- Arduino IDE
-- ESP32-S3 board support
-- TensorFlow Lite for Microcontrollers
-- Hardware sensors (see `case_studies/health_wearable/hardware_setup.md`)
-
-## Quick Start
-
-### 1. Framework Usage
-
-Train a basic Q-learning policy:
-```bash
-python scripts/train_q_learning.py --episodes 1000
-```
-
-Train with risk-aware rewards:
-```bash
-python scripts/train_q_learning.py --lambda_risk 1.0 --episodes 1000
-```
-
-Run parameter sweep:
-```bash
-python scripts/lambda_sweep.py --lambda_values 0 0.5 1.0 3.0
-```
-
-Sweep results are saved to `results/lambda_sweep.csv` (also committed once for reviewers).
-
-### 2. Health Wearable Case Study
-
-1. Install Arduino IDE and ESP32-S3 board support
-2. Install TensorFlow Lite for Microcontrollers library
-3. Connect hardware per `case_studies/health_wearable/hardware_setup.md`
-4. Configure risk penalty in firmware by modifying `LAMBDA_RISK` (default 0.0)
-5. Upload `case_studies/health_wearable/firmware/firmware/main.ino`
-
-### 3. Testing
-
-Run the test suite:
-```bash
-pytest tests/
-```
-
-Run specific reward tests:
-```bash
-pytest tests/test_reward.py -v
-```
-
-### 4. Hardware-in-the-Loop Evaluation
-
-Generate example sensor traces and run HIL replay:
-```bash
-python scripts/hil_replay_stub.py --create_example
-python scripts/hil_replay_stub.py --csv_file example_traces.csv --output hil_results.json
-```
+- matplotlib
+- wfdb (for MIT-BIH evaluation)
+- pytest (for testing)
 
 ## Framework Features
 
-### Risk-Aware Rewards
-The framework supports risk-aware reward functions that penalize missed critical events:
+### Persistence Logic (Fixed)
+When a sensor is OFF, the corresponding event flag retains its previous value:
+```python
+if sensor_is_on:
+    flag = ground_truth  # Update from sensor
+else:
+    flag = previous_flag  # Persist (no oracle access)
 ```
-reward = α·detection_success - β·energy_cost - λ·missed_events
+
+### Configurable Energy Penalty
+```bash
+# High detection (low savings)
+python scripts/train_q_learning.py --beta 0.05
+
+# Balanced
+python scripts/train_q_learning.py --beta 0.5
+
+# Max savings (lower detection)
+python scripts/train_q_learning.py --beta 1.0
 ```
 
-### Configurable Environments
-- `EnergyAwareSensingEnv`: Base class for multi-sensor RL environments
-- `HealthWearableEnv`: Specialized for wearable health monitoring
-- Extensible to other sensing applications
+### Multi-Seed Training
+Train on multiple random traces for better generalization:
+```bash
+python scripts/train_q_learning.py --n_seeds 10 --episodes 5000
+```
 
-### Training & Evaluation
-- Q-learning with ε-greedy exploration
-- Parameter sweeps for hyperparameter tuning
-- Long-duration synthetic evaluations
-- Model conversion utilities for embedded deployment
+## Results Summary
 
-## Case Studies
+### Synthetic Traces (16h simulation, 10 seeds)
+| Policy | Detection | Energy (mAh) | vs Always-On |
+|--------|-----------|--------------|--------------|
+| Always-On | 100% | 250 | baseline |
+| Safety (β=0.05) | 83% | 201 | -20% |
+| Balanced (β=0.5) | 67% | 79 | -68% |
+| Saver (β=1.0) | 33% | 32 | -87% |
 
-### Health Wearable
-Demonstrates energy-aware sensing for wearable health monitoring:
-- **Sensors**: ECG, PPG, Temperature
-- **Events**: Arrhythmia, blood pressure anomalies, fever
-- **Platform**: ESP32-S3 with TinyML models
-- **Results**: 16-hour evaluation showing power/accuracy trade-offs
+### MIT-BIH Real ECG Data (48 records)
+| Policy | Detection | Energy (mAh) |
+|--------|-----------|--------------|
+| Always-On | 96% | 7.5 |
+| RL (β=0.05) | 87% | 7.1 |
+| Heuristic | 64% | 3.7 |
 
 ## License
 
 MIT
 
-## Paper Results
+## Citation
 
-All results reported in our paper are in `paper_results/`:
-- `paper_results_lambdaA.json`: Lambda robustness analysis (λ=[0,20,50,100,200])
-- `paper_tables.txt`: Formatted tables and statistics for the paper
-
-Key findings:
-- 55% energy reduction (250→114 mAh) with 50.1% detection coverage
-- Policy robust across λ∈[0,200]
-- Statistical significance: p<0.002 vs baselines
+If you use this framework, please cite:
+```bibtex
+@article{ellallam2024energy,
+  title={Energy-Aware Sensing with Reinforcement Learning for TinyML},
+  author={El Allam, Oussama},
+  journal={Results in Engineering},
+  year={2024}
+}
+```
