@@ -187,13 +187,17 @@ def save_q_table_csv(Q: QTable, path: Path):
 # ─────────────────────────────────────────────────────────────────────────────
 # ─────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
+    import pickle
+    
     parser = argparse.ArgumentParser(description='Train Q-learning agent for energy-aware sensing')
     parser.add_argument('--lambda_risk', type=float, default=0.0, 
                        help='Risk penalty weight for missed events (default: 0.0)')
     parser.add_argument('--episodes', type=int, default=3000,
                        help='Number of training episodes (default: 3000)')
-    parser.add_argument('--output', type=str, default='qtable_sensors_time.csv',
-                       help='Output Q-table filename (default: qtable_sensors_time.csv)')
+    parser.add_argument('--output', type=str, default='q_table_fixed',
+                       help='Output Q-table filename base (without extension)')
+    parser.add_argument('--plot', action='store_true', default=True,
+                       help='Generate convergence plot')
     args = parser.parse_args()
     
     STEPS = 12_000                     # 16 h at 5 s cadence
@@ -218,8 +222,9 @@ if __name__ == "__main__":
         max_time_steps=STEPS,
     )
 
+    print(f"Training Q-learning agent with FIXED persistence logic...")
+    print(f"Episodes: {args.episodes}, Lambda_risk: {args.lambda_risk}")
     Q, R = q_learning_train(env, episodes=args.episodes)
-    print(f"Lambda_risk: {args.lambda_risk}")
     print(f"Avg reward (last 50 eps): {np.mean(R[-50:]):.2f}")
 
     # ────────── PROBE: how many state-actions prefer at least one sensor ON
@@ -227,5 +232,45 @@ if __name__ == "__main__":
     total_sa = len(Q)
     print(f"{on_pref/total_sa*100:.1f}% of state-actions favour >=1 sensor ON")
 
-    # ────────── save Q-table
-    save_q_table_csv(Q, args.output)
+    # ────────── save Q-table as CSV
+    save_q_table_csv(Q, f"{args.output}.csv")
+    
+    # ────────── save Q-table as pickle
+    pkl_path = Path(f"{args.output}.pkl")
+    with pkl_path.open("wb") as f:
+        pickle.dump(Q, f)
+    print(f"Q-table saved to {pkl_path} (pickle format)")
+    
+    # ────────── generate convergence plot
+    if args.plot:
+        try:
+            import matplotlib.pyplot as plt
+            
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+            
+            # Plot 1: Raw rewards
+            ax1.plot(R, alpha=0.3, linewidth=0.5)
+            # Moving average
+            window = 50
+            moving_avg = np.convolve(R, np.ones(window)/window, mode='valid')
+            ax1.plot(range(window-1, len(R)), moving_avg, color='red', linewidth=2, label=f'{window}-ep moving avg')
+            ax1.set_xlabel('Episode')
+            ax1.set_ylabel('Episode Reward')
+            ax1.set_title('Training Convergence (Fixed Persistence Logic)')
+            ax1.legend()
+            ax1.grid(True, alpha=0.3)
+            
+            # Plot 2: Q-table growth
+            ax2.axhline(y=len(Q), color='green', linestyle='--', label=f'Final Q-table size: {len(Q)}')
+            ax2.set_xlabel('Training completed')
+            ax2.set_ylabel('Q-table entries')
+            ax2.set_title('Q-table Size')
+            ax2.legend()
+            
+            plt.tight_layout()
+            fig_path = Path(f"{args.output}_convergence.png")
+            plt.savefig(fig_path, dpi=150)
+            print(f"Convergence plot saved to {fig_path}")
+            plt.close()
+        except ImportError:
+            print("matplotlib not available, skipping plot generation")
