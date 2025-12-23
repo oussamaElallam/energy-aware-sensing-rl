@@ -198,34 +198,87 @@ if __name__ == "__main__":
                        help='Output Q-table filename base (without extension)')
     parser.add_argument('--plot', action='store_true', default=True,
                        help='Generate convergence plot')
+    parser.add_argument('--n_seeds', type=int, default=10,
+                       help='Number of different traces to train on (default: 10)')
     args = parser.parse_args()
     
-    STEPS = 12_000                     # 16 h at 5 s cadence
-    rng = np.random.default_rng(0)
-    scenario = [
-        {
-            "arr_flag":  rng.choice([0, 1], p=[0.7, 0.3]),
-            "bp_flag":   rng.choice([0, 1], p=[0.6, 0.4]),
-            "fever_flag": rng.choice([0, 1], p=[0.8, 0.2]),
-        }
-        for _ in range(STEPS)
-    ]
+    STEPS_PER_SEED = 12_000  # 16 h at 5 s cadence per seed
+    
+    # Generate diverse training data from multiple seeds
+    # This ensures the Q-table generalizes across different event patterns
+    print(f"Generating training data from {args.n_seeds} different seeds...")
+    all_scenarios = []
+    for seed in range(args.n_seeds):
+        rng = np.random.default_rng(seed)
+        scenario = [
+            {
+                "arr_flag": int(rng.choice([0, 1], p=[0.7, 0.3])),
+                "bp_flag": int(rng.choice([0, 1], p=[0.6, 0.4])),
+                "fever_flag": int(rng.choice([0, 1], p=[0.8, 0.2])),
+            }
+            for _ in range(STEPS_PER_SEED)
+        ]
+        all_scenarios.append(scenario)
+    
+    print(f"Total: {args.n_seeds} traces × {STEPS_PER_SEED} steps = {args.n_seeds * STEPS_PER_SEED} training samples")
 
     # Use HealthWearableEnv from framework for consistency
-    env = HealthWearableEnv(
-        data=scenario,
-        sensor_costs=[10, 4, 1],
-        alpha=15.0,
-        beta=0.008,
-        lambda_risk=args.lambda_risk,
-        max_battery=400_000,
-        max_time_steps=STEPS,
-    )
-
-    print(f"Training Q-learning agent with FIXED persistence logic...")
+    # We'll rotate through scenarios each episode
+    print(f"\nTraining Q-learning agent with FIXED persistence logic...")
     print(f"Episodes: {args.episodes}, Lambda_risk: {args.lambda_risk}")
-    Q, R = q_learning_train(env, episodes=args.episodes)
-    print(f"Avg reward (last 50 eps): {np.mean(R[-50:]):.2f}")
+    print(f"Training on {args.n_seeds} different traces for generalization")
+    
+    Q: QTable = {}
+    rewards: List[float] = []
+    epsilon = 1.0
+    epsilon_min = 0.01
+    epsilon_decay = 0.998
+    gamma = 0.95
+    alpha_lr = 0.1
+    
+    for ep in range(args.episodes):
+        # Rotate through different scenarios each episode
+        scenario = all_scenarios[ep % len(all_scenarios)]
+        
+        env = HealthWearableEnv(
+            data=scenario,
+            sensor_costs=[10, 4, 1],
+            alpha=15.0,
+            beta=0.008,
+            lambda_risk=args.lambda_risk,
+            max_battery=400_000,
+            max_time_steps=STEPS_PER_SEED,
+        )
+        
+        s = env.reset()
+        ep_r = 0.0
+        done = False
+        
+        while not done:
+            # ε-greedy
+            if random.random() < epsilon:
+                a = random.randrange(8)
+            else:
+                a = int(np.argmax([Q.get((s, b), 0.0) for b in range(8)]))
+            
+            s2, r, done, _ = env.step(a)
+            
+            best_next = max(Q.get((s2, b), 0.0) for b in range(8))
+            td_target = r + gamma * best_next
+            td_error = td_target - Q.get((s, a), 0.0)
+            Q[(s, a)] = Q.get((s, a), 0.0) + alpha_lr * td_error
+            
+            s = s2
+            ep_r += r
+        
+        epsilon = max(epsilon_min, epsilon * epsilon_decay)
+        rewards.append(ep_r)
+        
+        if (ep + 1) % 500 == 0:
+            print(f"  Episode {ep+1}/{args.episodes}, Avg reward (last 50): {np.mean(rewards[-50:]):.2f}")
+    
+    R = rewards
+    print(f"\nTraining complete! Avg reward (last 50 eps): {np.mean(R[-50:]):.2f}")
 
     # ────────── PROBE: how many state-actions prefer at least one sensor ON
     on_pref  = sum(1 for (s, a), v in Q.items() if v > 0 and a != 0)
