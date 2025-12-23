@@ -1,13 +1,10 @@
 """
-Pareto Evaluation Script for Beta-Sweep Experiments.
-
-Evaluates all 3 beta configurations on synthetic and MIT-BIH data.
-Outputs pareto_results.csv summary table.
+Aggressive Pareto Evaluation Script for Beta-Sweep Experiments.
+Evaluates 3 aggressive beta configurations (0.05, 0.5, 1.0) on synthetic data.
 """
 import sys
 import csv
 import pickle
-import argparse
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -38,9 +35,7 @@ def generate_synthetic_trace(n_steps: int = 12_000, seed: int = 0) -> List[Dict]
 def evaluate_policy(data: List[Dict], policy_fn) -> Tuple[float, float]:
     """Evaluate policy, return (detection_rate, energy_mAh)."""
     env = HealthWearableEnv(
-        data=data,
-        sensor_costs=SENSOR_COSTS,
-        max_time_steps=len(data),
+        data=data, sensor_costs=SENSOR_COSTS, max_time_steps=len(data)
     )
     
     state = env.reset()
@@ -53,7 +48,6 @@ def evaluate_policy(data: List[Dict], policy_fn) -> Tuple[float, float]:
         ecg_on = (action >> 2) & 1
         ppg_on = (action >> 1) & 1
         tmp_on = action & 1
-        
         energy += SENSOR_COSTS[0]*ecg_on + SENSOR_COSTS[1]*ppg_on + SENSOR_COSTS[2]*tmp_on
         
         if env.t <= len(data):
@@ -61,11 +55,9 @@ def evaluate_policy(data: List[Dict], policy_fn) -> Tuple[float, float]:
             for flag, on in [('arr_flag', ecg_on), ('bp_flag', ppg_on), ('fever_flag', tmp_on)]:
                 if gt[flag]:
                     det_total += 1
-                    if on:
-                        det_hits += 1
+                    if on: det_hits += 1
         
-        if done:
-            break
+        if done: break
         state = next_state
     
     det_rate = (det_hits / det_total * 100) if det_total > 0 else 0.0
@@ -73,35 +65,27 @@ def evaluate_policy(data: List[Dict], policy_fn) -> Tuple[float, float]:
     return det_rate, energy_mAh
 
 def evaluate_synthetic(Q: Dict, n_seeds: int = 10) -> Tuple[float, float, float, float]:
-    """Evaluate on synthetic data. Returns (det_mean, det_std, energy_mean, energy_std)."""
-    det_rates = []
-    energies = []
-    
+    det_rates, energies = [], []
     for seed in range(n_seeds):
         data = generate_synthetic_trace(seed=seed)
         det, energy = evaluate_policy(data, lambda s: greedy_policy(Q, s))
         det_rates.append(det)
         energies.append(energy)
-    
     return np.mean(det_rates), np.std(det_rates), np.mean(energies), np.std(energies)
 
 def main():
-    parser = argparse.ArgumentParser(description='Pareto evaluation for beta sweep')
-    parser.add_argument('--output', type=str, default='pareto_results.csv')
-    args = parser.parse_args()
-    
-    # Beta configurations
+    # Aggressive beta configurations
     configs = [
-        ('Safety (0.008)', 'q_table_beta_0.008.pkl'),
-        ('Balanced (0.02)', 'q_table_beta_0.02.pkl'),
-        ('Saver (0.05)', 'q_table_beta_0.05.pkl'),
+        ('Safety (0.05)', 'q_table_beta_0.05.pkl'),
+        ('Balanced (0.5)', 'q_table_beta_0.5.pkl'),
+        ('Saver (1.0)', 'q_table_beta_1.0.pkl'),
     ]
     
     results = []
-    always_on_energy = 250.0  # Reference: all sensors on for 16h
+    always_on_energy = 250.0
     
     print("="*70)
-    print("PARETO EVALUATION: Beta Sweep Results")
+    print("AGGRESSIVE PARETO EVALUATION: Beta Sweep Results")
     print("="*70)
     
     for name, qtable_path in configs:
@@ -112,12 +96,11 @@ def main():
         
         print(f"\nEvaluating {name}...")
         Q = load_q_table(path)
-        
-        # Synthetic evaluation
         det_mean, det_std, energy_mean, energy_std = evaluate_synthetic(Q, n_seeds=10)
         energy_savings = (1 - energy_mean / always_on_energy) * 100
         
-        print(f"  Synthetic: Det={det_mean:.1f}%, Energy={energy_mean:.1f} mAh ({energy_savings:.1f}% savings)")
+        print(f"  Detection: {det_mean:.1f}% ± {det_std:.1f}%")
+        print(f"  Energy: {energy_mean:.1f} mAh ({energy_savings:.1f}% savings)")
         
         results.append({
             'policy': name,
@@ -130,26 +113,24 @@ def main():
     
     # Print summary table
     print("\n" + "="*70)
-    print("SUMMARY TABLE")
+    print("PARETO FRONTIER SUMMARY")
     print("="*70)
-    print(f"{'Policy':<20} {'Detection (Syn)':<18} {'Energy (Syn)':<18} {'Savings':<15}")
+    print(f"{'Policy':<20} {'Detection':<15} {'Energy (mAh)':<15} {'Savings':<12}")
     print("-"*70)
     
     for r in results:
         det_str = f"{r['det_syn_mean']:.1f}% ± {r['det_syn_std']:.1f}%"
         energy_str = f"{r['energy_syn_mean']:.1f} ± {r['energy_syn_std']:.1f}"
-        savings_str = f"{r['energy_savings']:.1f}%"
-        print(f"{r['policy']:<20} {det_str:<18} {energy_str:<18} {savings_str:<15}")
+        print(f"{r['policy']:<20} {det_str:<15} {energy_str:<15} {r['energy_savings']:.1f}%")
     
     print("="*70)
     
     # Save results
-    output_path = Path(args.output)
-    with output_path.open('w', newline='') as f:
+    with open('pareto_results.csv', 'w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=results[0].keys())
         writer.writeheader()
         writer.writerows(results)
-    print(f"\nResults saved to {output_path}")
+    print("\nResults saved to pareto_results.csv")
 
 if __name__ == "__main__":
     main()
