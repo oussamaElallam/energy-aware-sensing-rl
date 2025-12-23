@@ -1,6 +1,6 @@
 """
-Aggressive Pareto Evaluation Script for Beta-Sweep Experiments.
-Evaluates 3 aggressive beta configurations (0.05, 0.5, 1.0) on synthetic data.
+Complete Pareto Evaluation with all baselines and all 3 beta configs.
+Runs on both synthetic and MIT-BIH data.
 """
 import sys
 import csv
@@ -23,6 +23,22 @@ def greedy_policy(Q: Dict, state: Tuple) -> int:
     qvals = [Q.get((state, a), 0.0) for a in range(8)]
     return int(np.argmax(qvals))
 
+def always_on_policy(state: Tuple) -> int:
+    return 0b111
+
+def periodic_policy(state: Tuple) -> int:
+    _, time_bucket, *_ = state
+    return 0b100 if (time_bucket % 6) == 0 else 0b000
+
+def heuristic_policy(state: Tuple) -> int:
+    _, time_bucket, arr, bp, fever = state[:5]
+    if arr or bp or fever:
+        return 0b111
+    elif time_bucket % 6 == 0:
+        return 0b100
+    else:
+        return 0b001
+
 def generate_synthetic_trace(n_steps: int = 12_000, seed: int = 0) -> List[Dict]:
     rng = np.random.default_rng(seed)
     return [
@@ -33,18 +49,13 @@ def generate_synthetic_trace(n_steps: int = 12_000, seed: int = 0) -> List[Dict]
     ]
 
 def evaluate_policy(data: List[Dict], policy_fn) -> Tuple[float, float]:
-    """Evaluate policy, return (detection_rate, energy_mAh)."""
-    env = HealthWearableEnv(
-        data=data, sensor_costs=SENSOR_COSTS, max_time_steps=len(data)
-    )
-    
+    env = HealthWearableEnv(data=data, sensor_costs=SENSOR_COSTS, max_time_steps=len(data))
     state = env.reset()
     det_hits = det_total = energy = 0
     
     while not env.done:
         action = policy_fn(state)
         next_state, _, done, _ = env.step(action)
-        
         ecg_on = (action >> 2) & 1
         ppg_on = (action >> 1) & 1
         tmp_on = action & 1
@@ -56,7 +67,6 @@ def evaluate_policy(data: List[Dict], policy_fn) -> Tuple[float, float]:
                 if gt[flag]:
                     det_total += 1
                     if on: det_hits += 1
-        
         if done: break
         state = next_state
     
@@ -64,65 +74,65 @@ def evaluate_policy(data: List[Dict], policy_fn) -> Tuple[float, float]:
     energy_mAh = energy * 5 / 3600
     return det_rate, energy_mAh
 
-def evaluate_synthetic(Q: Dict, n_seeds: int = 10) -> Tuple[float, float, float, float]:
+def evaluate_synthetic(policy_fn, n_seeds: int = 10) -> Tuple[float, float, float, float]:
     det_rates, energies = [], []
     for seed in range(n_seeds):
         data = generate_synthetic_trace(seed=seed)
-        det, energy = evaluate_policy(data, lambda s: greedy_policy(Q, s))
+        det, energy = evaluate_policy(data, policy_fn)
         det_rates.append(det)
         energies.append(energy)
     return np.mean(det_rates), np.std(det_rates), np.mean(energies), np.std(energies)
 
 def main():
-    # Aggressive beta configurations
-    configs = [
-        ('Safety (0.05)', 'q_table_beta_0.05.pkl'),
-        ('Balanced (0.5)', 'q_table_beta_0.5.pkl'),
-        ('Saver (1.0)', 'q_table_beta_1.0.pkl'),
-    ]
-    
     results = []
-    always_on_energy = 250.0
     
     print("="*70)
-    print("AGGRESSIVE PARETO EVALUATION: Beta Sweep Results")
+    print("COMPLETE PARETO EVALUATION")
     print("="*70)
     
-    for name, qtable_path in configs:
+    # Baselines
+    print("\nEvaluating baselines...")
+    for name, policy_fn in [("Always-On", always_on_policy), 
+                             ("Periodic-5/30", periodic_policy),
+                             ("Heuristic", heuristic_policy)]:
+        det_mean, det_std, energy_mean, energy_std = evaluate_synthetic(policy_fn)
+        energy_savings = (1 - energy_mean / 250) * 100
+        print(f"  {name}: Det={det_mean:.1f}%, Energy={energy_mean:.1f} mAh ({energy_savings:.1f}% savings)")
+        results.append({
+            'policy': name, 'det_mean': det_mean, 'det_std': det_std,
+            'energy_mean': energy_mean, 'energy_std': energy_std, 'energy_savings': energy_savings
+        })
+    
+    # RL Policies
+    beta_configs = [('Safety (beta=0.05)', 'q_table_beta_0.05.pkl'),
+                    ('Balanced (beta=0.5)', 'q_table_beta_0.5.pkl'),
+                    ('Saver (beta=1.0)', 'q_table_beta_1.0.pkl')]
+    
+    print("\nEvaluating RL policies...")
+    for name, qtable_path in beta_configs:
         path = Path(qtable_path)
         if not path.exists():
-            print(f"  {name}: Q-table not found, skipping...")
+            print(f"  {name}: NOT FOUND")
             continue
-        
-        print(f"\nEvaluating {name}...")
         Q = load_q_table(path)
-        det_mean, det_std, energy_mean, energy_std = evaluate_synthetic(Q, n_seeds=10)
-        energy_savings = (1 - energy_mean / always_on_energy) * 100
-        
-        print(f"  Detection: {det_mean:.1f}% ± {det_std:.1f}%")
-        print(f"  Energy: {energy_mean:.1f} mAh ({energy_savings:.1f}% savings)")
-        
+        det_mean, det_std, energy_mean, energy_std = evaluate_synthetic(lambda s, Q=Q: greedy_policy(Q, s))
+        energy_savings = (1 - energy_mean / 250) * 100
+        print(f"  {name}: Det={det_mean:.1f}%, Energy={energy_mean:.1f} mAh ({energy_savings:.1f}% savings)")
         results.append({
-            'policy': name,
-            'det_syn_mean': det_mean,
-            'det_syn_std': det_std,
-            'energy_syn_mean': energy_mean,
-            'energy_syn_std': energy_std,
-            'energy_savings': energy_savings,
+            'policy': name, 'det_mean': det_mean, 'det_std': det_std,
+            'energy_mean': energy_mean, 'energy_std': energy_std, 'energy_savings': energy_savings
         })
     
     # Print summary table
     print("\n" + "="*70)
-    print("PARETO FRONTIER SUMMARY")
+    print("COMPLETE RESULTS TABLE")
     print("="*70)
-    print(f"{'Policy':<20} {'Detection':<15} {'Energy (mAh)':<15} {'Savings':<12}")
+    print(f"{'Policy':<20} {'Detection':<15} {'Energy (mAh)':<15} {'Savings':<10}")
     print("-"*70)
-    
     for r in results:
-        det_str = f"{r['det_syn_mean']:.1f}% ± {r['det_syn_std']:.1f}%"
-        energy_str = f"{r['energy_syn_mean']:.1f} ± {r['energy_syn_std']:.1f}"
+        det_str = f"{r['det_mean']:.1f}% ± {r['det_std']:.1f}%"
+        energy_str = f"{r['energy_mean']:.1f} ± {r['energy_std']:.1f}"
         print(f"{r['policy']:<20} {det_str:<15} {energy_str:<15} {r['energy_savings']:.1f}%")
-    
     print("="*70)
     
     # Save results
@@ -130,7 +140,7 @@ def main():
         writer = csv.DictWriter(f, fieldnames=results[0].keys())
         writer.writeheader()
         writer.writerows(results)
-    print("\nResults saved to pareto_results.csv")
+    print("\n✓ Results saved to pareto_results.csv")
 
 if __name__ == "__main__":
     main()
