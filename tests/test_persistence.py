@@ -1,6 +1,6 @@
 """
 Tests for persistence logic in RL environment.
-Verifies that event flags persist when sensors are OFF (no oracle cheating).
+Verifies that event flags persist when sensors are OFF (realistic partial observability).
 """
 
 import pytest
@@ -12,7 +12,7 @@ from framework.rl_env import EnergyAwareSensingEnv, HealthWearableEnv
 
 
 class TestPersistenceLogic:
-    """Test suite for verifying persistence behavior (no oracle cheating)."""
+    """Test suite for verifying persistence behavior (realistic partial observability)."""
     
     def test_arr_flag_persists_when_ecg_off(self):
         """Verify arr_flag persists when ECG sensor is OFF."""

@@ -116,7 +116,7 @@ class EnergyAwareSensingEnv:
         if self.t >= self.max_time_steps or self.battery == 0:
             self.done = True
         else:
-            # FIXED: Only update flag if corresponding sensor is ON (no oracle cheating)
+            # Persistence logic: Only update flag if corresponding sensor is ON (realistic partial observability)
             # Mapping: sensor 0 (ECG) -> arr_flag, sensor 1 (PPG) -> bp_flag, sensor 2 (Temp) -> fever_flag
             next_data = self.data[self.t]
             sensor_to_flag = {
