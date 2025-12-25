@@ -133,10 +133,10 @@ MIT
 
 If you use this framework, please cite:
 ```bibtex
-@article{ellallam2024energy,
-  title={Energy-Aware Sensing with Reinforcement Learning for TinyML},
+@article{ellallam2025energy,
+  title={Energy-Efficient On-Device Reinforcement Learning for Adaptive Multi-Sensor Scheduling in Resource-Constrained Edge Systems},
   author={El Allam, Oussama},
-  journal={Results in Engineering},
-  year={2024}
+  journal={Under Review},
+  year={2025}
 }
 ```
