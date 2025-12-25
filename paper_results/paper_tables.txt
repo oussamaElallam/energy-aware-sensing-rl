@@ -1,0 +1,23 @@
+=== TABLE 3 FOOTNOTE ===
+†Statistical significance (Wilcoxon signed-rank test, n=10 runs): 
+RL vs. Always-on: p < 0.002 for both detection and energy
+RL vs. Periodic: p < 0.002 for both detection and energy  
+95% CI for RL (λ=0): detection [48.6%, 51.5%], energy [109.7, 117.8] mAh
+
+=== TABLE 5: Policy Robustness ===
+λ     | Detection(%) | Energy(mAh) | Savings(%)
+------|--------------|-------------|------------
+0     | 50.1 ± 2.0   | 113.8 ± 5.7 | 54.5
+20    | 49.6 ± 1.8   | 112.6 ± 5.5 | 55.0
+200   | 49.7 ± 1.7   | 112.8 ± 5.6 | 54.9
+
+=== BATTERY CALCULATION FOOTNOTE ===
+Assuming 500mAh battery: Always-on: 250mAh/16h = 15.625mA average → 500/15.625 = 32 hours. 
+RL (λ=0): 113.8mAh/16h = 7.11mA → 500/7.11 = 70.3 hours (2.2× improvement).
+
+=== TRAINING CONFIGURATION ===
+Q-learning: 200 episodes, 1000 training steps per episode
+Evaluation: 12000 steps (16 hours), 10 random seeds
+Parameters: α=12.0, β=0.008, ε=0.1 with exponential decay, γ=0.95
+MIT-BIH: 5-fold patient-wise cross-validation
+PPG2ABP: 80/10/10 subject-wise split

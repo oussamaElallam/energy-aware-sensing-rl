@@ -4,7 +4,6 @@ type: software
 authors:
   - family-names: "El Allam"
     given-names: "Oussama"
-    orcid: "https://orcid.org/0000-0000-0000-0000"
 title: "Energy-Aware Sensing RL Framework"
 version: "1.0-paper"
 date-released: 2025-01-08

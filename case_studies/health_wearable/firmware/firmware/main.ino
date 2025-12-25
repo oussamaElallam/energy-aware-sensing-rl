@@ -525,11 +525,11 @@ float calculateReward(int action) {
     bool ppg_on = (action & 0x02) > 0;  // Bit 1: PPG
     bool temp_on = (action & 0x01) > 0; // Bit 0: Temperature
     
-    // Calculate energy cost
+    // Calculate energy cost (MUST match training parameters in train_q_learning.py)
     float energy_cost = 0.0;
-    if (ecg_on) energy_cost += 50.0;   // ECG sensor cost
-    if (ppg_on) energy_cost += 40.0;   // PPG sensor cost
-    if (temp_on) energy_cost += 10.0;  // Temperature sensor cost
+    if (ecg_on) energy_cost += 10.0;   // ECG sensor cost [mA/5s]
+    if (ppg_on) energy_cost += 4.0;    // PPG sensor cost [mA/5s]
+    if (temp_on) energy_cost += 1.0;   // Temperature sensor cost [mA/5s]
     
     // Calculate detection success
     float detection_success = 0.0;
@@ -565,11 +565,11 @@ void updateBattery() {
     if (current_time - last_battery_update >= BATTERY_UPDATE_INTERVAL) {
         last_battery_update = current_time;
         
-        // Calculate drain based on active sensors
+        // Calculate drain based on active sensors (proportional to sensor_costs [10, 4, 1])
         float drain = BATTERY_DRAIN_RATE;
-        if (ecg_enabled) drain += 0.15;
-        if (ppg_enabled) drain += 0.2;
-        if (temp_enabled) drain += 0.1;
+        if (ecg_enabled) drain += 0.10;  // ECG: highest drain
+        if (ppg_enabled) drain += 0.04;  // PPG: medium drain
+        if (temp_enabled) drain += 0.01; // Temp: lowest drain
         
         // Update battery level
         battery_level = max(0, static_cast<int>(battery_level - ceil(drain)));

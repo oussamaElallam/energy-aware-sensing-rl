@@ -1,0 +1,25 @@
+ANSWER 1: Epsilon = 0 during evaluation (pure argmax, no exploration)
+
+ANSWER 2: Per-seed breakdown
+----------------------------------------------------------------------
+Seed  Det%     Energy   MissingStates  MostCommonAction
+----------------------------------------------------------------------
+   0     0.0%      0.0   12000/12000   OFF:12000
+   1    91.0%    224.4       0/12000   ALL:8641
+   2    91.3%    224.7       0/12000   ALL:8622
+   3    91.4%    224.4       0/12000   ALL:8567
+   4    92.0%    224.4       0/12000   ALL:8647
+   5    91.3%    224.4       0/12000   ALL:8642
+   6    91.9%    224.6       0/12000   ALL:8658
+   7    91.9%    224.3       0/12000   ALL:8584
+   8    91.4%    224.5       0/12000   ALL:8603
+   9    91.9%    224.4       0/12000   ALL:8626
+----------------------------------------------------------------------
+Mean: 82.4%, Std: 27.5%
+Min: 0.0%, Max: 92.0%
+
+ANSWER 3: Different traces per seed
+Each seed generates a UNIQUE synthetic trace.
+Variance comes from: trace difficulty + persistence logic + missing Q-states
+
+ROOT CAUSE: Many states not in Q-table -> default action 0 (OFF)

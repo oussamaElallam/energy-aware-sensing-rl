@@ -1,0 +1,4 @@
+lambda_risk,avg_reward,sensor_on_percentage,qtable_file,status
+0.0,149636.77,87.5,qtable_lambda_0.0.csv,success
+1.0,148881.57,87.5,qtable_lambda_1.0.csv,success
+3.0,147380.59,87.5,qtable_lambda_3.0.csv,success

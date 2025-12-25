@@ -116,9 +116,20 @@ class EnergyAwareSensingEnv:
         if self.t >= self.max_time_steps or self.battery == 0:
             self.done = True
         else:
-            # Update event flags for next timestep
+            # FIXED: Only update flag if corresponding sensor is ON (no oracle cheating)
+            # Mapping: sensor 0 (ECG) -> arr_flag, sensor 1 (PPG) -> bp_flag, sensor 2 (Temp) -> fever_flag
             next_data = self.data[self.t]
-            self.current_events = {flag: int(next_data[flag]) for flag in self.event_flags}
+            sensor_to_flag = {
+                0: 'arr_flag',    # ECG sensor -> arrhythmia detection
+                1: 'bp_flag',     # PPG sensor -> blood pressure anomaly
+                2: 'fever_flag',  # Temp sensor -> fever detection
+            }
+            for sensor_idx, flag_name in sensor_to_flag.items():
+                if flag_name in self.event_flags:
+                    if sensor_activations[sensor_idx]:
+                        # Sensor is ON: update from ground truth
+                        self.current_events[flag_name] = int(next_data[flag_name])
+                    # else: Sensor is OFF - flag persists (no change)
         
         info = {
             'energy_cost': energy_cost,

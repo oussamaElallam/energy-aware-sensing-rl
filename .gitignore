@@ -28,6 +28,7 @@ wheels/
 
 # Results and logs
 results/
+!results/lambda_sweep.csv
 logs/
 *.log
 
@@ -40,3 +41,5 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+
+archive/legacy_experiments/
